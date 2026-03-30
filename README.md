@@ -2,7 +2,8 @@
 
 <a id="GIFT-Eval"></a>
 ## Improved GIFT-Eval Results
-We've extended the context length from 2k to 4k and additionally trained a 18.6M model with a larger MLP.
+We've extended the context length from 2k to 4k and additionally trained a 18.6M model with a larger MLP. The updated results are shown in the table below.
+FlowState is now outperforming both TimesFM-2.5 and TiRex on both MASE and CRPS.
 
 | Model | #Params | MASE ↓ | CRPS ↓ |
 |------|---------|--------|--------|
@@ -42,7 +43,8 @@ Comparison table of various models on standard time series datasets. The best MA
 | Electricity | MSE | ***0.155*** | 0.213 | 0.188 | <u>0.178</u> | 0.216 |
 | | MAE | ***0.240*** | 0.308 | 0.273 | <u>0.270</u> | 0.304 |
 
-## Extended Ablation Results on FlowState-3M (GIFT-Eval)
+<a id="Ablations"></a>
+## Extended Ablation Results on FlowState-3M (2k context) (GIFT-Eval)
 
 | Model Variant | MASE ↓ | CRPS ↓ |
 |--------------|--------|--------|
@@ -56,8 +58,6 @@ Comparison table of various models on standard time series datasets. The best MA
 | w/o causal RevIN (standard RevIN) | 0.738 | 0.513 |
 | auto scale factor | 0.746 | 0.521 |
 |  |  |  |
-| *Extended Context* |  |  |
-| 4k context | 0.712 | 0.496 |
 | *Encoder Ablations* |  |  |
 | w/o output gate | 0.726 | 0.505 |
 | S5 real | 0.862 | 0.602 |
@@ -69,25 +69,34 @@ Comparison table of various models on standard time series datasets. The best MA
 | Full-Legendre basis | 0.730 | 0.507 |
 |  |  |  |
 | *Evaluation Variants* |  |  |
-| First 64 basis functions (eval only) | 0.735 | 0.509 |
 | First 128 basis functions (eval only) | 0.726 | 0.503 |
+| First 64 basis functions (eval only) | 0.735 | 0.509 |
 
-### Additional Ablation Studies (Post‑Rebuttal)
-Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These ablations are summarized in Table X and described below.
+Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These ablations are summarized in the Table above and new ablations are described below.
+
+<a id="Causal-RevIn"></a>
 #### Causal RevIN.
 To assess the importance of strictly causal normalization in the parallel forecast training scheme, we replaced Causal RevIN with standard (non‑causal) RevIN while keeping the architecture, training protocol, and context length fixed. This ablation results in a clear performance drop, confirming that causal normalization is essential to prevent information leakage across forecasts generated from different context windows.
+
+<a id="Time-Noise"></a>
 #### Time Noise.
-To isolate the effect of time noise, we trained a variant without time noise injection while preserving all other components. Removing time noise consistently degrades performance, highlighting its role in improving robustness and generalization across varying temporal resolutions.
-Context Length Scaling.
-We additionally trained FlowState models with an extended 4k context window (rather than only evaluating at longer context). Both the 3M, 10M, and 18.6M variants benefit from longer context during training, achieving significantly improved performance. This confirms that FlowState effectively exploits longer temporal dependencies when sufficient context is available.
-Number of Basis Functions (Evaluation‑Only).
-To evaluate the sensitivity of the decoder to the number of basis functions, we performed evaluation‑time ablations using fewer basis functions than the default setting. Reducing the basis size to 64 or 128 functions—while keeping the trained model unchanged—leads to a graceful degradation in performance, indicating that FlowState is not overly sensitive to this hyperparameter and remains robust even with a more compact functional representation.
-Automatic Scale Factor Selection.
-Finally, we evaluated an automatic scale‑factor selection variant that removes domain‑specific heuristics. While this setting performs worse than the heuristic‑guided baseline, the degradation is moderate, suggesting that FlowState retains reasonable robustness under imperfect scale information and motivating future work on fully learned or adaptive scale inference.
+To isolate the effect of time noise, we trained a variant without time noise injection in the time axis of the basis functions, while preserving all other components. Removing time noise consistently degrades performance, highlighting its role in improving robustness and generalization across varying temporal resolutions.
 
+<a id="Fewer-Basis-Functions"></a>
+#### Number of Basis Functions (Evaluation‑Only).
+To evaluate the sensitivity of the decoder to the number of basis functions, we performed evaluation‑time ablations using fewer basis functions than the setting used for training. Reducing the basis size from 256 to 128 or 64 functions—while keeping the trained model unchanged leads to a negligible degradation in performance for 128 basis functions and more substential degradation for 64 basis functions.
+This indicates that FlowState is not overly sensitive to this hyperparameter and 256 basis functions are sufficient and do not limit the representational capacity of the functional decoder, while smaller basis sets still retain reasonable predictive performance.
+
+<a id="Seasonality-Detection"></a>
+#### Automatic Scale Factor Selection.
+We evaluated an automatic scale‑factor selection variant that removes the need for dataset‑specific knowledge about sampling rate or domain.
+While this setting performs worse than the heuristic‑guided baseline, the degradation is moderate, suggesting that FlowState retains reasonable robustness under imperfect scale information and motivating future work on fully learned scale-factor detection or more elaborate post-training scale-factor detection schemes such as via in-context learning.
+The algorithm to detect the seasonality is based on finding local minima of a seasonal error metric over a range of possible seasonalities. The implementation can be found in: `seasonality_detection.py`.
+We further note that the degradation in performance stems from few datasets. 78 out 97 tasks are within 5% of the performance of the baseline, many of which are identical or even better in performance compared to the baseline. The negative outliers come from datasets such as "Solar Weekly", where the context length used to determine the seasonality is not large enough to capture even one season, making it impossible to find the correct seasonality.
+For most practical applications, this approach is robust enough and should not lead to substential performance degradation, whilst eliminating the need for dataset specific seasonality information.
+<a id="Fixed-Decoder"></a>
 #### Functional Basis Decoder (FBD).
-We performed an ablation where the Functional Basis Decoder is replaced by a fixed, resolution‑agnostic linear decoder, while keeping the SSM encoder unchanged. This leads to a substantial degradation in both MASE and CRPS, demonstrating that the functional decoding mechanism contributes meaningfully beyond the encoder alone. Qualitative inspection further reveals degraded local forecast structure, even when large‑scale trends remain reasonable.
-
+We performed an ablation where the Functional Basis Decoder is replaced by a fixed, resolution‑agnostic linear decoder, while keeping the SSM encoder unchanged. This leads to a substantial degradation in both MASE and CRPS, demonstrating that the functional decoding mechanism contributes meaningfully beyond the encoder alone. Qualitative inspection further reveals degraded local forecast structure, even when large‑scale trends remain reasonable:
 ** Seasonality 8 **
 Whilst FlowState (see Baseline Figure, which uses FlowState-3M (2k)) has no problems dealing with small seasonalities, the fixed decoder ablation breaks down for seasonalities below ~12. 
 ![Baseline](figs/sine_baseline_8.png)
@@ -105,4 +114,9 @@ For larger seasonalities, the FlowState baseline performs well, but for the fixe
 Evaluation of ETTm1 with varying scale factors.
 
 ![Sensitivity analysis](figs/ETT_Sensitivity.png)
+
+<a id="Equivariance-Proof"></a>
+## Equivariance Proof
+The formal proof for the main claim of the paper corresponding to the proof intuition in the main part of the paper:
+
 
