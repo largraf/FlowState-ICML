@@ -1,5 +1,8 @@
 # Additional material for rebuttal
 
+<a id="GIFT-Eval"></a>
+## Updated GIFT-Eval results, sorted by ascending MASE.
+
 <a id="datasets"></a>
 ## Performance evaluation on standard datasets
 Comparison table of various models on standard time series datasets. The best MAE or MSE values are markd in ***bold*** and second best <u>underlined</u>
