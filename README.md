@@ -72,11 +72,34 @@ Comparison table of various models on standard time series datasets. The best MA
 | First 64 basis functions (eval only) | 0.735 | 0.509 |
 | First 128 basis functions (eval only) | 0.726 | 0.503 |
 
-TODO explain new results again here
+### Additional Ablation Studies (Post‑Rebuttal)
+Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These ablations are summarized in Table X and described below.
+#### Causal RevIN.
+To assess the importance of strictly causal normalization in the parallel forecast training scheme, we replaced Causal RevIN with standard (non‑causal) RevIN while keeping the architecture, training protocol, and context length fixed. This ablation results in a clear performance drop, confirming that causal normalization is essential to prevent information leakage across forecasts generated from different context windows.
+#### Time Noise.
+To isolate the effect of time noise, we trained a variant without time noise injection while preserving all other components. Removing time noise consistently degrades performance, highlighting its role in improving robustness and generalization across varying temporal resolutions.
+Context Length Scaling.
+We additionally trained FlowState models with an extended 4k context window (rather than only evaluating at longer context). Both the 3M, 10M, and 18.6M variants benefit from longer context during training, achieving significantly improved performance. This confirms that FlowState effectively exploits longer temporal dependencies when sufficient context is available.
+Number of Basis Functions (Evaluation‑Only).
+To evaluate the sensitivity of the decoder to the number of basis functions, we performed evaluation‑time ablations using fewer basis functions than the default setting. Reducing the basis size to 64 or 128 functions—while keeping the trained model unchanged—leads to a graceful degradation in performance, indicating that FlowState is not overly sensitive to this hyperparameter and remains robust even with a more compact functional representation.
+Automatic Scale Factor Selection.
+Finally, we evaluated an automatic scale‑factor selection variant that removes domain‑specific heuristics. While this setting performs worse than the heuristic‑guided baseline, the degradation is moderate, suggesting that FlowState retains reasonable robustness under imperfect scale information and motivating future work on fully learned or adaptive scale inference.
 
-### Fixed FBD Results
-TODO explain these results in more detail with additional Plots
+#### Functional Basis Decoder (FBD).
+We performed an ablation where the Functional Basis Decoder is replaced by a fixed, resolution‑agnostic linear decoder, while keeping the SSM encoder unchanged. This leads to a substantial degradation in both MASE and CRPS, demonstrating that the functional decoding mechanism contributes meaningfully beyond the encoder alone. Qualitative inspection further reveals degraded local forecast structure, even when large‑scale trends remain reasonable.
 
+** Seasonality 8 **
+Whilst FlowState (see Baseline Figure, which uses FlowState-3M (2k)) has no problems dealing with small seasonalities, the fixed decoder ablation breaks down for seasonalities below ~12. 
+![Baseline](figs/sine_baseline_8.png)
+![Fixed Decoder](figs/sine_fixed_decoder_8.png)
+** Seasonality 24 **
+For seasonality of 24, which is abundant in the pretraining corpus, both our FlowState baseline and the fixed decoder ablation perform well. 
+![Baseline](figs/sine_baseline_24.png)
+![Fixed Decoder](figs/sine_fixed_decoder_24.png)
+** Seasonality 100 **
+For larger seasonalities, the FlowState baseline performs well, but for the fixed decoder ablation we can clearly see that the individual patches (of length 24) produced by the decoder are off, whilst the overall shape of the prediction looks good, due to the correctly adjusted SSM encoder.
+![Baseline](figs/sine_baseline_100.png)
+![Fixed Decoder](figs/sine_fixed_decoder_100.png)
 <a id="sensitivity"></a>
 ## Sensitivity analysis
 Evaluation of ETTm1 with varying scale factors.
