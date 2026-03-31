@@ -76,15 +76,15 @@ Following reviewer feedback, we conducted several additional ablation studies to
 
 <a id="Fixed-Decoder"></a>
 ### Qualitative Analysis of the Fixed Decoder.
-**Seasonality 8**
+**Seasonality 8:**
 Whilst FlowState (see Baseline Figure, which uses FlowState-3M (2k)) has no problems dealing with small seasonalities, the fixed decoder ablation breaks down for seasonalities below ~12. 
 ![Figure1](figs/sine_baseline_8.png)
 ![Figure2](figs/sine_fixed_decoder_8.png)
-**Seasonality 24**
+**Seasonality 24:**
 For seasonality of 24, which is abundant in the pretraining corpus, both our FlowState baseline and the fixed decoder ablation perform well. 
 ![Figure3](figs/sine_baseline_24.png)
 ![Figure4](figs/sine_fixed_decoder_24.png)
-**Seasonality 100**
+**Seasonality 100:**
 For larger seasonalities, the FlowState baseline performs well, but for the fixed decoder ablation we can clearly see that the individual patches (of length 24) produced by the decoder are off, whilst the overall shape of the prediction looks good, due to the correctly adjusted SSM encoder.
 ![Figure5](figs/sine_baseline_100.png)
 ![Figure6](figs/sine_fixed_decoder_100.png)
@@ -93,10 +93,6 @@ For larger seasonalities, the FlowState baseline performs well, but for the fixe
 Evaluation of ETTm1 with varying scale factors.
 
 ![Figure7](figs/ETT_Sensitivity.png)
-
-<a id="Equivariance-Proof"></a>
-## Equivariance Proof
-The formal proof for the main claim of the paper corresponding to the proof intuition in the main part of the paper:
 
 <a id="failure"></a>
 ## Failure mode analysis
