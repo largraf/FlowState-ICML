@@ -74,35 +74,38 @@ Comparison table of various models on standard time series datasets. The best MA
 
 Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These new ablations, explained in the rebuttal text are: "w/o time noise", "w/o causal RevIn", "auto scale factor", "fixed FBD (linear decoder)", "First 128 basis functions (eval only)", and "First 64 basis functions (eval only)". The other ablations are the same as in the paper, and shown here for reference.
 
-<a id="Seasonality-Detection"></a>
-#### Automatic Scale Factor Selection.
-We evaluated an automatic scale‑factor selection variant that removes the need for dataset‑specific knowledge about sampling rate or domain.
-While this setting performs worse than the heuristic‑guided baseline, the degradation is moderate, suggesting that FlowState retains reasonable robustness under imperfect scale information and motivating future work on fully learned scale-factor detection or more elaborate post-training scale-factor detection schemes such as via in-context learning.
-The algorithm to detect the seasonality is based on finding local minima of a seasonal error metric over a range of possible seasonalities. The implementation can be found in: `seasonality_detection.py`.
-We further note that the degradation in performance stems from few datasets. 78 out 97 tasks are within 5% of the performance of the baseline, many of which are identical or even better in performance compared to the baseline. The negative outliers come from datasets such as "Solar Weekly", where the context length used to determine the seasonality is not large enough to capture even one season, making it impossible to find the correct seasonality.
-For most practical applications, this approach is robust enough and should not lead to substential performance degradation, whilst eliminating the need for dataset specific seasonality information.
 <a id="Fixed-Decoder"></a>
 ### Qualitative Analysis of the Fixed Decoder.
 **Seasonality 8**
 Whilst FlowState (see Baseline Figure, which uses FlowState-3M (2k)) has no problems dealing with small seasonalities, the fixed decoder ablation breaks down for seasonalities below ~12. 
-![Baseline](figs/sine_baseline_8.png)
-![Fixed Decoder](figs/sine_fixed_decoder_8.png)
+![Figure1](figs/sine_baseline_8.png)
+![Figure2](figs/sine_fixed_decoder_8.png)
 **Seasonality 24**
 For seasonality of 24, which is abundant in the pretraining corpus, both our FlowState baseline and the fixed decoder ablation perform well. 
-![Baseline](figs/sine_baseline_24.png)
-![Fixed Decoder](figs/sine_fixed_decoder_24.png)
+![Figure3](figs/sine_baseline_24.png)
+![Figure4](figs/sine_fixed_decoder_24.png)
 **Seasonality 100**
 For larger seasonalities, the FlowState baseline performs well, but for the fixed decoder ablation we can clearly see that the individual patches (of length 24) produced by the decoder are off, whilst the overall shape of the prediction looks good, due to the correctly adjusted SSM encoder.
-![Baseline](figs/sine_baseline_100.png)
-![Fixed Decoder](figs/sine_fixed_decoder_100.png)
+![Figure5](figs/sine_baseline_100.png)
+![Figure6](figs/sine_fixed_decoder_100.png)
 <a id="sensitivity"></a>
 ## Sensitivity analysis
 Evaluation of ETTm1 with varying scale factors.
 
-![Sensitivity analysis](figs/ETT_Sensitivity.png)
+![Figure7](figs/ETT_Sensitivity.png)
 
 <a id="Equivariance-Proof"></a>
 ## Equivariance Proof
 The formal proof for the main claim of the paper corresponding to the proof intuition in the main part of the paper:
 
+<a id="failure"></a>
+## Failure mode analysis
+[Figure8](#variable-L) shows the MSE when forecasting a simple sine wave with a fixed forecasting length and varying context lengths.
 
+<a id="variable-L"></a>
+![Figure8](figs/VariableCtx.png)
+
+[Figure9](#variable-T) shows the MSE when forecasting a simple sine wave with a fixed context lenght and varying forecasting lengths.
+
+<a id="variable-T"></a>
+![Figure9](figs/VariableForecast.png)
