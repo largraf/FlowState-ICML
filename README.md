@@ -72,20 +72,7 @@ Comparison table of various models on standard time series datasets. The best MA
 | First 128 basis functions (eval only) | 0.726 | 0.503 |
 | First 64 basis functions (eval only) | 0.735 | 0.509 |
 
-Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These ablations are summarized in the Table above and new ablations are described below.
-
-<a id="Causal-RevIn"></a>
-#### Causal RevIN.
-To assess the importance of strictly causal normalization in the parallel forecast training scheme, we replaced Causal RevIN with standard (non‑causal) RevIN while keeping the architecture, training protocol, and context length fixed. This ablation results in a clear performance drop, confirming that causal normalization is essential to prevent information leakage across forecasts generated from different context windows.
-
-<a id="Time-Noise"></a>
-#### Time Noise.
-To isolate the effect of time noise, we trained a variant without time noise injection in the time axis of the basis functions, while preserving all other components. Removing time noise consistently degrades performance, highlighting its role in improving robustness and generalization across varying temporal resolutions.
-
-<a id="Fewer-Basis-Functions"></a>
-#### Number of Basis Functions (Evaluation‑Only).
-To evaluate the sensitivity of the decoder to the number of basis functions, we performed evaluation‑time ablations using fewer basis functions than the setting used for training. Reducing the basis size from 256 to 128 or 64 functions—while keeping the trained model unchanged leads to a negligible degradation in performance for 128 basis functions and more substential degradation for 64 basis functions.
-This indicates that FlowState is not overly sensitive to this hyperparameter and 256 basis functions are sufficient and do not limit the representational capacity of the functional decoder, while smaller basis sets still retain reasonable predictive performance.
+Following reviewer feedback, we conducted several additional ablation studies to further isolate and validate the key design choices in FlowState. These new ablations, explained in the rebuttal text are: "w/o time noise", "w/o causal RevIn", "auto scale factor", "fixed FBD (linear decoder)", "First 128 basis functions (eval only)", and "First 64 basis functions (eval only)". The other ablations are the same as in the paper, and shown here for reference.
 
 <a id="Seasonality-Detection"></a>
 #### Automatic Scale Factor Selection.
@@ -95,17 +82,16 @@ The algorithm to detect the seasonality is based on finding local minima of a se
 We further note that the degradation in performance stems from few datasets. 78 out 97 tasks are within 5% of the performance of the baseline, many of which are identical or even better in performance compared to the baseline. The negative outliers come from datasets such as "Solar Weekly", where the context length used to determine the seasonality is not large enough to capture even one season, making it impossible to find the correct seasonality.
 For most practical applications, this approach is robust enough and should not lead to substential performance degradation, whilst eliminating the need for dataset specific seasonality information.
 <a id="Fixed-Decoder"></a>
-#### Functional Basis Decoder (FBD).
-We performed an ablation where the Functional Basis Decoder is replaced by a fixed, resolution‑agnostic linear decoder, while keeping the SSM encoder unchanged. This leads to a substantial degradation in both MASE and CRPS, demonstrating that the functional decoding mechanism contributes meaningfully beyond the encoder alone. Qualitative inspection further reveals degraded local forecast structure, even when large‑scale trends remain reasonable:
-** Seasonality 8 **
+### Qualitative Analysis of the Fixed Decoder.
+**Seasonality 8**
 Whilst FlowState (see Baseline Figure, which uses FlowState-3M (2k)) has no problems dealing with small seasonalities, the fixed decoder ablation breaks down for seasonalities below ~12. 
 ![Baseline](figs/sine_baseline_8.png)
 ![Fixed Decoder](figs/sine_fixed_decoder_8.png)
-** Seasonality 24 **
+**Seasonality 24**
 For seasonality of 24, which is abundant in the pretraining corpus, both our FlowState baseline and the fixed decoder ablation perform well. 
 ![Baseline](figs/sine_baseline_24.png)
 ![Fixed Decoder](figs/sine_fixed_decoder_24.png)
-** Seasonality 100 **
+**Seasonality 100**
 For larger seasonalities, the FlowState baseline performs well, but for the fixed decoder ablation we can clearly see that the individual patches (of length 24) produced by the decoder are off, whilst the overall shape of the prediction looks good, due to the correctly adjusted SSM encoder.
 ![Baseline](figs/sine_baseline_100.png)
 ![Fixed Decoder](figs/sine_fixed_decoder_100.png)
